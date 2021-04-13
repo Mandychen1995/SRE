@@ -89,18 +89,24 @@ Ex. 安裝好後要Apk add
 -------
 
 # Apline安裝完後的指令設定
-1. **apk update**
-2. **下載常用的指令**
+1.**apk update/apk upgrade**
+
+2.**下載常用的指令**
 apk add tree nano sudo zip unzip curl wget grep bash procps
-3. **nano /etc/sudoers**
+
+3.**nano /etc/sudoers**
 在%wheel ALL 那邊 NOPASSWD:ALL
 將前方#刪除後儲存
+
 **4. adduser –s /bin/bash –h /home/username –D username**
 addgroup username wheel
-echo –e “username\nusername\n” | passwd username 
-5. **sudo login username**
-6. **因為root是通用帳號最高權限, 此帳號無法刪除只能停權**
+echo –e “username\nusername\n” | passwd username
+
+5.**sudo login username**
+
+6.**因為root是通用帳號最高權限, 此帳號無法刪除只能停權**
 sudo passwd –dl root
+
 --------
 查ip: ipaddr
 
