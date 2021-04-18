@@ -5,6 +5,7 @@
 
 --------
 開啟VMware創建新VM
+
 ![p2](https://i.imgur.com/WuqzGAU.png)
 
 -------
@@ -15,6 +16,7 @@
 ![p4](https://i.imgur.com/Sw6voiQ.png)
 
 -----
+
 **主機請用需求/功能命名**
 儲存此台VM的資料夾可以另外設定一個自己比較容易找的到的路徑
 
