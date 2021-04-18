@@ -1,5 +1,5 @@
-# Apline環境下的VM建置
-至官網下載 [Apline](https://alpinelinux.org/downloads/)
+# Alpine環境下的VM建置
+至官網下載 [Alpine](https://alpinelinux.org/downloads/)
 **版本為X86_64位元版本**
 ![p1](https://i.imgur.com/xlDJ0B5.png)
 
@@ -88,7 +88,8 @@ Ex. 安裝好後要Apk add
 
 -------
 
-# Apline安裝完後的指令設定
+# Alpine安裝完後的指令設定
+```
 1.**apk update/apk upgrade**
 
 2.**下載常用的指令**
@@ -106,10 +107,11 @@ echo –e “username\nusername\n” | passwd username
 
 6.**因為root是通用帳號最高權限, 此帳號無法刪除只能停權**
 sudo passwd –dl root
+```
 
 --------
+```
 查ip: ipaddr
-
 重新設定密碼: sudo passwd username
-
 刪除帳號: sudo deluser username
+```
