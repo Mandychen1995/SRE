@@ -4,8 +4,7 @@
 ![p1](https://i.imgur.com/xlDJ0B5.png)
 
 --------
-開啟VMware創建新VM
-
+開啟VMware創建新VM </br>
 ![p2](https://i.imgur.com/WuqzGAU.png)
 
 -------
