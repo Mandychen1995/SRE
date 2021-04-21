@@ -19,6 +19,7 @@
 
 **命名方式請依照需求用途/軟體版本命名**
 資料夾儲存處盡量設在C槽, 比較好找到
+
 ![p5](https://i.imgur.com/2ioFOw8.png)
 
 ---
@@ -51,6 +52,7 @@ CD/DVD選已經下載好的ISO
 ---
 
 設定IP, 預設都是DHCP
+
 ![p10](https://i.imgur.com/yz74bxi.png)
 
 ---
