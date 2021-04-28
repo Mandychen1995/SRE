@@ -88,13 +88,106 @@ $ chmod +x count1.sh
 ## Process Security in Linux
 ### 1.prcess的防火牆系統: Seccomp
 **Linux System Call & Seccomp (security computing mode)**
-在執行階段的檔案linux有防護機制(防火牆) 
-### 2.setuid
+在linux執行中程式的防火牆
+
+### 2.setuid/setgid/sticky
+
+**setuid=4, 
+setgid=2, 
+sticky=1**
+
+#### ( A ) setuid
+當一個可執行文件啟動時, 不會以啟動它的用戶的權限運行, 而是以該文件所有者的權限運行 >>>掠奪使用者權限
+
+ex. desktop建立一個檔案, 但若把某指令的執行權限setuid, 之後用該指令權限執行的程式owner會更改。
+![uid](https://i.imgur.com/1RqpUyh.jpg)
+
+
+#### ( B ) setgid
+對文件和目錄都有影響, 只要其他使用者備加入主要owner的群組, 他就可以在群組內建立/刪除檔案與目錄
+
+```
+esktop@UB2004D:~$ sudo useradd -m -s /bin/sh joe
+
+desktop@UB2004D:~$ sudo passwd joe
+
+desktop@UB2004D:~$ ls -al | grep test
+
+drwxrwxr-x  2 desktop desktop  4096  四  28 18:13 test
+
+desktop@UB2004D:~$ sudo login joe
+
+$ cd /home/desktop/test
+
+$ nano 1
+```
+就會發現無法在這個目錄中新增內容
+![](https://i.imgur.com/PyenX1b.png)
+
+但desktop若更新這一個特定目錄/檔案的執行權限setgid, 並把joe加入至desktop的群組中, 他就可以在這一個目錄中新增/刪除任何資訊
+
+```
+esktop@UB2004D:~$ chmod 2775 test
+
+desktop@UB2004D:~$ ls -al | grep test
+
+drwxrwsr-x  2 desktop desktop  4096  四  28 18:13 test
+
+esktop@UB2004D:~$ sudo addgroup joe desktop
+Adding user joe to group desktop ...
+
+Adding user joe to group desktop
+
+Done.
+```
+
+
+#### ( C ) sticky
+只有owner可以刪除/移動這個指定目錄下的檔案, 其他使用者只有修改內容的權限
+
+```
+desktop@UB2004D:~$ chmod 1777 test
+
+desktop@UB2004D:~$ ls -al | grep test
+
+drwxrwsrwt  2 desktop desktop  4096  四  28 18:41 test
+
+desktop@UB2004D:~$ cd test
+
+desktop@UB2004D:~/test$ touch 123
+
+desktop@UB2004D:~/test$ sudo login joe
+
+$ cd /home/desktop/test
+
+$ ls -al
+
+-rw-rw-r--  1 root    desktop    0  四  28 18:40 123
+
+$ rm 123
+
+rm: cannot remove '123': Operation not permitted
+```
+
+
 ### 3.capabilities
+
+列出有設定 Linux capabilities 的所有命令
+`getcap -r / 2>/dev/null`
+
+從根目錄開始搜尋只要沒有capabilities的目錄就導入到黑洞, 剩下的就是具有cap特別功能的目錄
+
 
 -----------
 
 ## Linux 目錄與檔案之權限意義
+
 ### 1.權限對檔案的重要性
 ### 2.權限對目錄的重要性
 ### 3.使用者操作功能與權限
+R: cat/tree/ls/head/tail/cp/mv
+
+W: nano/touch/cp/mkdir/rm;rm -r
+#### rm: 被刪除的檔案/目錄要有W權限
+
+X: cd目錄/執行檔案
