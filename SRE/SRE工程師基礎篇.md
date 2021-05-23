@@ -96,6 +96,7 @@ $ chmod +x count1.sh
 setgid=2, 
 sticky=1**
 
+
 #### ( A ) setuid
 當一個可執行文件啟動時, 不會以啟動它的用戶的權限運行, 而是以該文件所有者的權限運行 >>>掠奪使用者權限
 
@@ -180,14 +181,184 @@ rm: cannot remove '123': Operation not permitted
 
 -----------
 
-## Linux 目錄與檔案之權限意義
+### Linux 目錄與檔案之權限意義
 
-### 1.權限對檔案的重要性
-### 2.權限對目錄的重要性
-### 3.使用者操作功能與權限
+#### 1.權限對檔案的重要性
+#### 2.權限對目錄的重要性
+#### 3.使用者操作功能與權限
 R: cat/tree/ls/head/tail/cp/mv
 
 W: nano/touch/cp/mkdir/rm;rm -r
 #### rm: 被刪除的檔案/目錄要有W權限
 
 X: cd目錄/執行檔案
+
+---
+
+## Process Security in Linux  
+### 1. process 的防火牆系統 : seccomp  
+**在執行階段的 process 有防護機制(防火牆)**
+```
+(檢視是否啟用 SECCOMP)
+$ cat /boot/config-$(uname -r) | grep CONFIG_SECCOMP
+CONFIG_SECCOMP=y
+CONFIG_SECCOMP_FILTER=y
+```
+
+```
+$ mkdir syscall; cd syscall
+
+(安裝 go 開發套件)
+$ sudo apt install golang-go
+
+(安裝 Golang 所需的 Seccomp 套件)
+$ sudo apt install libseccomp-dev golang-github-seccomp-libseccomp-golang-dev
+
+$ sudo mv /usr/share/gocode/src/github.com/ /usr/lib/go-1.13/src/
+(鎖定版本，不用隨意更新版本，新版不支援舊版)
+(Ubuntu 查版本代號: go version)
+```
+
+**Seccomp 實作範例**  
+```
+$ nano main.go 
+package main
+
+import (
+  "fmt"
+  "syscall"
+  "os"
+)
+
+func main() {
+
+    var syscalls = []string{
+    "rt_sigaction", "mkdirat", "clone", "mmap", "readlinkat", "futex", "rt_sigprocmask",
+    "mprotect", "write", "sigaltstack", "open", "read","close", "fstat", "munmap",
+    "brk", "access", "getrlimit","exit_group","getpid"}
+
+    whiteList(syscalls)
+
+    err := syscall.Mkdir("/tmp/moo", 0755)
+    if err != nil {
+        panic(err)
+    } else {
+        fmt.Printf("I just created a file\n")
+    }
+    fmt.Printf("pid: %d\n", os.Getpid())
+}
+
+$ go build -o test
+(當前目錄區把所有.go程式翻譯出來產生一個program = test)
+$ ./test
+.......
+I just created a file
+pid: 35701
+```
+:arrow_right: main.go 裡面是 go 語言，寫任何一個程式語言寫出來都有一個相依檔，java/golang叫做 package(套件包)  
+nil : 空值
+
+
+### 2. Linux File Permission & Setuid   
+**setuid = 4** : 對目錄沒有影響。setuid 位是用 s 來表示的，代替了可執行位的 x。小寫的 s 意味著可執行位已經被設置，否則你會看到一個大寫的 S。  
+大寫的 S 發生於當設置了 setuid 或 setgid 位、但沒有設置可執行位 x 時。它用於提醒用戶這個矛盾的設置：如果可執行位未設置，則 setuid 和 setgid 位均不起作用。  
+
+**setgid = 2** : 對文件和目錄都有影響，通常用於文件共享。  
+
+**sticky = 1** : 它對文件沒有影響，但當它在目錄上使用時，所述目錄中的所有文件只能由其所有者刪除或移動。  
+
+**umask** : 跟 chmod 相反，在666基礎上檔案;及在777基礎上減少目錄權限。  
+
+```
+$ echo  'package main
+import (
+    "fmt"
+    "io/ioutil"
+)
+func main() {
+    err := ioutil.WriteFile("/mulan.txt", []byte("Hello"), 0755)
+    if err != nil {
+        fmt.Printf("Unable to write file: %v\n", err)
+    } else {
+        fmt.Printf("/mulan.txt created\n")
+    }
+} ' > myfile.go
+
+$ CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -a myfile.go
+```
+
+```
+(bigred 帳號沒有權限在 根目錄 (/) 產生檔案)
+$ dir myfile
+-rwxrwxr-x 1 bigred bigred  2.0M  Jul 26 05:13 myfile
+
+$ ./myfile
+Unable to write file: open /mulan.txt: permission denied
+
+(一定要先設定 owner, 才可設定 setuid)
+$ sudo chown root myfile; sudo chmod 4755 myfile
+
+$ dir myfile
+-rwsr-xr-x 1 root bigred 2.0M Jul 26 06:57 myfile
+
+$ ./myfile 
+/mulan.txt created
+
+$ dir /mulan.txt 
+-rwxr-xr-x 1 root bigred 5 Jul 26 07:09 /mulan.txt
+```
+```
+(檢視系統中有多少具有 setuid 功能的命令)
+$ sudo find / -user root -perm -4000 2>/dev/null | grep -E '^/bin|^/usr/bin'
+/bin/umount
+/bin/su
+/bin/fusermount
+/bin/mount
+/usr/bin/chsh
+/usr/bin/pkexec
+/usr/bin/sudo
+/usr/bin/passwd
+/usr/bin/chfn
+/usr/bin/newgrp
+/usr/bin/gpasswd
+```
+
+### 3. capabilities  
+**設給program，掠奪root的權限**  
+```
+$ sudo useradd -m -s /bin/bash rbean
+$ echo "rbean:rbean" | sudo chpasswd
+
+(設定 rbean 家目錄中的 python3 命令檔，具有 Capabilities setuid 權限，代表 python3 所執行的程式可設定 setuid 功能)
+$ sudo cp /usr/bin/python3 /home/rbean 
+
+$ sudo setcap  cap_setuid+ep  /home/rbean/python3
+(讓python3有setUID)
+$ exit
+
+
+(列出有設定 Linux capabilities 的所有命令，從根目錄開始掃一遍哪些有被設定capabilities)
+$ getcap -r / 2>/dev/null
+/home/rbean/python3 = cap_setuid+ep
+/bin/ping = cap_net_raw+ep
+/usr/lib/x86_64-linux-gnu/gstreamer1.0/gstreamer-1.0/gst-ptp-helper = cap_net_bind_service,cap_net_admin+ep
+/usr/bin/mtr-packet = cap_net_raw+ep
+/usr/bin/traceroute6.iputils = cap_net_raw+ep
+
+
+(由以下命令得知 python3 命令檔並沒有設定 setuid 功能)
+$ ls -al python3
+-rwxr-xr-x 1 root root 5453504 Jul 28 04:56 python3
+
+在以下 python3 命令所執行的 程式可執行 os.setuid(0) 這行命令, 提升 /bin/bash 這命令為 root 權限
+$ ./python3 -c 'import os;os.setuid(0);os.system("/bin/bash")'
+root@ub204:~# id
+uid=0(root) gid=1001(rbean) groups=1001(rbean)
+```
+參數解說:  
+\-c 跑程式  
+os.setuid(0) 設root  
+os.system(“/bin/bash”) 啟動時他的UID是root的0  
+
+
+###### tags: `SRE`
