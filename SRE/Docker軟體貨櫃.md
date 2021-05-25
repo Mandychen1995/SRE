@@ -496,7 +496,7 @@ $ docker rm -f testa1
 參數說明:  
 -d : container在背景執行
 -f : container process一定要在前景執行(第一支程式)  
-**查IP : docker exec -it container名字 hostname -i**
+**查IP : docker exec -it container名字 hostname -i**  
 
 
 ```
