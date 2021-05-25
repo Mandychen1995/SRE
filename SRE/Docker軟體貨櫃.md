@@ -494,8 +494,9 @@ $ curl http://172.17.0.2:8888
 $ docker rm -f testa1
 ```
 參數說明:  
--f : container在背景，container process一定要在前景執行第一支程式  
-查IP : docker exec -it container名字 hostname -i  
+-d : container在背景執行
+-f : container process一定要在前景執行(第一支程式)  
+**查IP : docker exec -it container名字 hostname -i**
 
 
 ```
